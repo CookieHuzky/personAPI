@@ -1,0 +1,12 @@
+{
+    "appPort": 8080,
+
+    "dbHost": "localhost",
+    "dbUser": "database_user",
+    "dbPass": "database_password",
+    "dbDatabase": "database_name",
+
+    "authToken": "1234"
+
+    "accessLogLevel": 1
+}

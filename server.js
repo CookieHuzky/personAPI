@@ -33,7 +33,7 @@ else {
             password: appSettings.dbPass,
             database: appSettings.dbDatabase
         });
-        
+
         db.connect();
 
         // -----
@@ -67,7 +67,7 @@ else {
         // PUT functions
         // -----
         app.put(`/person`, (req, res) => {
-            var newPerson = Object.assign(new Person, req.body);
+            let newPerson = Object.assign(new Person, req.body);
             db.query(`INSERT INTO persons (name, age) VALUES ("${newPerson.name}, ${newPerson.age})`);
             res.sendStatus(201).send(`Updated user ${req.params.name}`);
         });
@@ -79,10 +79,10 @@ else {
             var newPerson = Object.assign(new Person, req.body);
             db.query(`UPDATE persons SET name = "${newPerson.name}", age = ${newPerson.age} WHERE id = ${req.params.id}`, (error, results, fields) => {
                 if(error != null) {
-                    var responseJSON;
+                    let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.send(responseJSON);
+                    res.sendStatus().send(responseJSON);
                 }
                 else if(results.affectedRows === 0) {
                     res.send(`No entry at id ${req.params.id}!`)
@@ -102,7 +102,7 @@ else {
         app.get(`/person/byId/:id`, (req, res) => {
             db.query(`SELECT * FROM persons WHERE id = ${req.params.id}`, (error, results, fields) => {
                 if(error != null) {
-                    var responseJSON;
+                    let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
                     res.send(responseJSON);
@@ -112,11 +112,11 @@ else {
                 }
             });
         });
-
+        
         app.get(`/person/byName/:name`, (req, res) => {
             db.query(`SELECT * FROM persons WHERE name = "${req.params.name}"`, (error, results, fields) => {
                 if(error != null) {
-                    var responseJSON;
+                    let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
                     res.send(responseJSON);

@@ -44,6 +44,8 @@ else {
         var unlockNextRequest = false;
         var unlockActive = false;
 
+        db.query(`CREATE TABLE IF NOT EXISTS persons (id INT PRIMARY KEY AUTO_INCREMENT, name TEXT, age INT)`)
+
         app.use((req, res, next) => { 
             if(appSettings.accessLogLevel == 1) {
                 console.log(`Access from ` + req.ip);

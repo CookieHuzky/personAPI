@@ -83,7 +83,7 @@ else {
                     let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.sendStatus().send(responseJSON);
+                    res.status(500).send(responseJSON);
                 }
                 else if((!(unlockActive)) && (results.length > 0)) {
                         res.status(409).send(`Person with name ${newPerson.name} already exists! (Force this command by using UNLOCK on /)`);
@@ -94,10 +94,10 @@ else {
                                 let responseJSON;
                                 responseJSON[0] = error.sqlMessage;
                                 responseJSON[1] = error.sql;
-                                res.sendStatus().send(responseJSON);
+                                res.sendStatus(500).send(responseJSON);
                             }
                             else {
-                                res.status(201).send(`Person ${newPerson.name} created at id ${results.insertId}`);
+                                res.send(`Person ${newPerson.name} created at id ${results.insertId}`);
                             }
                         });
                 }
@@ -114,7 +114,7 @@ else {
                     let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.send(responseJSON);
+                    res.status(500).send(responseJSON);
                 }
                 else if(results.affectedRows === 0) {
                     res.send(`No entry at id ${req.params.id}!`)
@@ -137,7 +137,7 @@ else {
                     let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.send(responseJSON);
+                    res.status(500).send(responseJSON);
                 }
                 else {
                     res.send(results)
@@ -151,7 +151,7 @@ else {
                     let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.send(responseJSON);
+                    res.status(500).send(responseJSON);
                 }
                 else if (results.length == 0) {
                     res.send(`No entries found for ${req.params.name}`);
@@ -166,8 +166,17 @@ else {
         // DELETE functions
         // -----
         app.delete(`/person/:id`, (req, res) => {
-            db.query(`DELETE FROM persons WHERE id = ${req.params.id}`);
-            res.end(`Deleted user with id ${req.params.id}`);
+            db.query(`DELETE FROM persons WHERE id = ${req.params.id}`, (error, results, fields) => {
+                if(error != null) {
+                    let responseJSON;
+                    responseJSON[0] = error.sqlMessage;
+                    responseJSON[1] = error.sql;
+                    res.status(500).send(responseJSON);
+                }
+                else{
+                    res.end(`Deleted user with id ${req.params.id}`);
+                }
+            });
         });
 
         // -----
@@ -175,7 +184,7 @@ else {
         // -----
         app.unlock(`/`, (req, res) => {
             unlockNextRequest = true;
-            res.send(`Unlock is now available for 1 request!`);
+            res.send(`Unlock is now active for the next request!`);
         })
     });
 }

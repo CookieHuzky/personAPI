@@ -41,6 +41,9 @@ else {
         // -----
         app.use(express.json());
         
+        var unlockNextRequest = false;
+        var unlockActive = false;
+
         app.use((req, res, next) => { 
             if(appSettings.accessLogLevel == 1) {
                 console.log(`Access from ` + req.ip);
@@ -48,13 +51,20 @@ else {
             if (req.headers.authtoken == appSettings.authToken) {
                 if(appSettings.accessLogLevel == 1) {
                     console.log(`   Connection: Allowed`);
-                    console.log(`   Auth Token = ${appSettings.authToken}`)
+                    //console.log(`   Auth Token = ${appSettings.authToken}`)       <-- Reserved for developement progress state with multiple auth keys
                     console.log(`   Request ${req.method} on ${req.originalUrl}`);
+                    if(unlockNextRequest) {
+                        unlockActive = true;
+                        unlockNextRequest = false;
+                    }
+                    else if((!(unlockNextRequest)) && (unlockActive)) {
+                        unlockActive = false;
+                    }
                 }
                 next();
             }
             else {
-                if(appSettings.accessLog == 1) {
+                if(appSettings.accessLogLevel == 1) {
                     console.log(`   Connection: Denied`);
                 }
                 res.sendStatus(401);
@@ -68,8 +78,30 @@ else {
         // -----
         app.put(`/person`, (req, res) => {
             let newPerson = Object.assign(new Person, req.body);
-            db.query(`INSERT INTO persons (name, age) VALUES ("${newPerson.name}, ${newPerson.age})`);
-            res.sendStatus(201).send(`Updated user ${req.params.name}`);
+            db.query(`SELECT * FROM persons WHERE name = "${newPerson.name}"`, (error, results, fields) => {
+                if(error != null) {
+                    let responseJSON;
+                    responseJSON[0] = error.sqlMessage;
+                    responseJSON[1] = error.sql;
+                    res.sendStatus().send(responseJSON);
+                }
+                else if((!(unlockActive)) && (results.length > 0)) {
+                        res.status(409).send(`Person with name ${newPerson.name} already exists! (Force this command by using UNLOCK on /)`);
+                    }
+                    else {
+                        db.query(`INSERT INTO persons (name, age) VALUES ("${newPerson.name}", ${newPerson.age})`, (error, results, fields) => {
+                            if(error != null) {
+                                let responseJSON;
+                                responseJSON[0] = error.sqlMessage;
+                                responseJSON[1] = error.sql;
+                                res.sendStatus().send(responseJSON);
+                            }
+                            else {
+                                res.status(201).send(`Person ${newPerson.name} created at id ${results.insertId}`);
+                            }
+                        });
+                }
+            });
         });
 
         // -----
@@ -82,7 +114,7 @@ else {
                     let responseJSON;
                     responseJSON[0] = error.sqlMessage;
                     responseJSON[1] = error.sql;
-                    res.sendStatus().send(responseJSON);
+                    res.send(responseJSON);
                 }
                 else if(results.affectedRows === 0) {
                     res.send(`No entry at id ${req.params.id}!`)
@@ -112,7 +144,7 @@ else {
                 }
             });
         });
-        
+
         app.get(`/person/byName/:name`, (req, res) => {
             db.query(`SELECT * FROM persons WHERE name = "${req.params.name}"`, (error, results, fields) => {
                 if(error != null) {
@@ -136,6 +168,14 @@ else {
         app.delete(`/person/:id`, (req, res) => {
             db.query(`DELETE FROM persons WHERE id = ${req.params.id}`);
             res.end(`Deleted user with id ${req.params.id}`);
+        });
+
+        // -----
+        // Unlock function
+        // -----
+        app.unlock(`/`, (req, res) => {
+            unlockNextRequest = true;
+            res.send(`Unlock is now available for 1 request!`);
         })
     });
 }
